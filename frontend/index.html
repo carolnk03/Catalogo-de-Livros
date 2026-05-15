@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Livros</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Botão modo escuro -->
+    <button id="darkModeToggle" class="dark-mode-toggle" title="Alternar tema">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="container">
+        <header class="header">
+            <h1>Meu Catálogo de Livros</h1>
+            <p class="subtitle">Gerencie sua biblioteca pessoal com estilo</p>
+        </header>
+
+        <!-- Buscar livros na API -->
+        <section class="search-section card animate-slide-up">
+            <h2><i class="fas fa-search"></i> Buscar Livro</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Digite o título do livro...">
+                <button id="searchBtn" class="btn-primary">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </section>
+
+        <!-- Adicionar livro manualmente -->
+        <section class="add-section card animate-slide-up">
+            <h2><i class="fas fa-plus-circle"></i> Adicionar Manualmente</h2>
+            <form id="addBookForm">
+                <div class="form-grid">
+                    <input type="text" id="title" placeholder="Título do livro" required>
+                    <input type="text" id="author" placeholder="Autor(a)" required>
+                    <input type="number" id="pages" placeholder="Nº de páginas">
+                    <select id="genre" required>
+                        <option value="">Selecione o gênero</option>
+                        <option value="Ficção Científica">Ficção Científica</option>
+                        <option value="Fantasia">Fantasia</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Terror">Terror</option>
+                        <option value="Suspense">Suspense</option>
+                        <option value="Drama">Drama</option>
+                        <option value="Aventura">Aventura</option>
+                        <option value="Biografia">Biografia</option>
+                        <option value="Técnico">Técnico</option>
+                        <option value="Poesia">Poesia</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+                <div class="rating-input">
+                    <label>Avaliação:</label>
+                    <div class="stars-input" id="starsInput">
+                        <i class="far fa-star" data-rating="1"></i>
+                        <i class="far fa-star" data-rating="2"></i>
+                        <i class="far fa-star" data-rating="3"></i>
+                        <i class="far fa-star" data-rating="4"></i>
+                        <i class="far fa-star" data-rating="5"></i>
+                    </div>
+                    <input type="hidden" id="rating" value="0">
+                </div>
+                <button type="submit" class="btn-primary btn-full">
+                    <i class="fas fa-plus"></i> Adicionar à Biblioteca
+                </button>
+            </form>
+        </section>
+
+        <!-- Biblioteca -->
+        <section class="library-section card animate-slide-up">
+            <div class="library-header">
+                <h2><i class="fas fa-books"></i> Minha Biblioteca</h2>
+                <div class="stats">
+                    <span class="stat-badge">
+                        <i class="fas fa-book"></i> <span id="totalBooks">0</span> livros
+                    </span>
+                    <span class="stat-badge read">
+                        <i class="fas fa-check-circle"></i> <span id="readBooks">0</span> lidos
+                    </span>
+                    <span class="stat-badge rating">
+                        <i class="fas fa-star"></i> Média: <span id="avgRating">0</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="filters-container">
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">
+                        <i class="fas fa-list"></i> Todos
+                    </button>
+                    <button class="filter-btn" data-filter="read">
+                        <i class="fas fa-check-circle"></i> Lidos
+                    </button>
+                    <button class="filter-btn" data-filter="unread">
+                        <i class="fas fa-book-open"></i> Não Lidos
+                    </button>
+                </div>
+                <select id="genreFilter" class="genre-filter">
+                    <option value="all">Todos os gêneros</option>
+                    <option value="Ficção Científica">Ficção Científica</option>
+                    <option value="Fantasia">Fantasia</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Terror">Terror</option>
+                    <option value="Suspense">Suspense</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Aventura">Aventura</option>
+                    <option value="Biografia">Biografia</option>
+                    <option value="Técnico">Técnico</option>
+                    <option value="Poesia">Poesia</option>
+                    <option value="Outro">Outro</option>
+                </select>
+                <select id="sortBy" class="sort-select">
+                    <option value="newest">Mais recentes</option>
+                    <option value="oldest">Mais antigos</option>
+                    <option value="title">Título A-Z</option>
+                    <option value="rating">Melhor avaliados</option>
+                    <option value="pages">Mais páginas</option>
+                </select>
+            </div>
+
+            <div id="booksList" class="books-grid"></div>
+        </section>
+    </div>
+
+    <!-- Toast para notificações -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
