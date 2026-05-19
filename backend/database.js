@@ -1,27 +1,55 @@
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
+const fs = require('fs');
 const path = require('path');
 
-// Criar/conectar ao banco de dados
-const db = new Database(path.join(__dirname, 'books.db'));
+const DB_PATH = path.join(__dirname, 'books.db');
 
-// Habilitar WAL mode para melhor performance
-db.pragma('journal_mode = WAL');
+let db;
 
-// Criar tabelas
-db.exec(`
-  CREATE TABLE IF NOT EXISTS books (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    author TEXT NOT NULL,
-    pages INTEGER DEFAULT 0,
-    genre TEXT DEFAULT 'Outro',
-    rating INTEGER DEFAULT 0 CHECK(rating >= 0 AND rating <= 5),
-    read INTEGER DEFAULT 0 CHECK(read IN (0, 1)),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+async function getDatabase() {
+  if (db) return db;
+  const SQL = await initSqlJs();
+  
+  // Carregar banco existente ou criar novo
+  try {
+    if (fs.existsSync(DB_PATH)) {
+      const fileBuffer = fs.readFileSync(DB_PATH);
+      db = new SQL.Database(fileBuffer);
+    } else {
+      db = new SQL.Database();
+    }
+  } catch (error) {
+    db = new SQL.Database();
+  }
+  
+  // Criar tabelas
+  db.run(`
+    CREATE TABLE IF NOT EXISTS books (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      author TEXT NOT NULL,
+      pages INTEGER DEFAULT 0,
+      genre TEXT DEFAULT 'Outro',
+      rating INTEGER DEFAULT 0 CHECK(rating >= 0 AND rating <= 5),
+      read INTEGER DEFAULT 0 CHECK(read IN (0, 1)),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  // Salvar no disco
+  saveDatabase();
+  
+  console.log('✅ Banco de dados inicializado com sucesso!');
+  return db;
+}
 
-console.log('✅ Banco de dados inicializado com sucesso!');
+function saveDatabase() {
+  if (db) {
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    fs.writeFileSync(DB_PATH, buffer);
+  }
+}
 
-module.exports = db;
+module.exports = { getDatabase, saveDatabase };
