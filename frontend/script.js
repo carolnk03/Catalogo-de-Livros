@@ -1,18 +1,19 @@
 class BookManager {
     constructor() {
-        //config da API
+        // Configuração da API
         this.API_URL = 'http://localhost:3000/api/books';
-        this.useAPI = false; //mudar para true quando o backend estiver rodando
+        this.useAPI = true; // Mudar para true quando o backend estiver rodando
         
-        //estado da aplicação
+        // Estado da aplicação
         this.books = [];
         this.currentFilter = 'all';
         this.currentGenreFilter = 'all';
         this.currentSort = 'newest';
         this.selectedRating = 0;
         this.isLoading = false;
+        this.lastSearchTime = 0; // Controle de rate limit
         
-        //inicializar
+        // Inicializar
         this.init();
     }
 
@@ -24,13 +25,12 @@ class BookManager {
         this.renderBooks();
         this.updateStats();
         
-        //loading inicial
         setTimeout(() => {
             document.body.style.opacity = '1';
         }, 100);
     }
 
-    //carregamento de dados
+    // Carregamento de dados
     async loadBooks() {
         if (this.useAPI) {
             await this.loadBooksFromAPI();
@@ -38,7 +38,7 @@ class BookManager {
             this.loadBooksFromLocalStorage();
         }
     }
-    //carregar do localStorage
+
     loadBooksFromLocalStorage() {
         try {
             const savedBooks = localStorage.getItem('booksPro');
@@ -53,7 +53,7 @@ class BookManager {
             this.addSampleBooks();
         }
     }
-    //carregar da API
+
     async loadBooksFromAPI() {
         try {
             this.showLoading(true);
@@ -68,7 +68,7 @@ class BookManager {
             this.showLoading(false);
         }
     }
-    //adicionar livros de exemplo
+
     addSampleBooks() {
         const sampleBooks = [
             {
@@ -106,14 +106,13 @@ class BookManager {
         this.saveBooks();
     }
 
-    //modo escuro
+    // Modo escuro
     setupDarkMode() {
         const darkModeToggle = document.getElementById('darkModeToggle');
         if (!darkModeToggle) return;
 
         const icon = darkModeToggle.querySelector('i');
         
-        //verificar preferência salva
         const savedTheme = localStorage.getItem('theme');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
@@ -121,7 +120,6 @@ class BookManager {
             this.enableDarkMode(darkModeToggle, icon);
         }
 
-        //event listener
         darkModeToggle.addEventListener('click', () => {
             const isDark = document.body.getAttribute('data-theme') === 'dark';
             
@@ -130,11 +128,9 @@ class BookManager {
             } else {
                 this.enableDarkMode(darkModeToggle, icon);
             }
-            // animação
             this.animateButton(darkModeToggle);
         });
 
-        // observar mudanças no sistema
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             if (!localStorage.getItem('theme')) {
                 if (e.matches) {
@@ -167,7 +163,7 @@ class BookManager {
         }, 300);
     }
 
-    //sistema de estrelas
+    // SISTEMA DE ESTRELAS
     setupStarsInput() {
         const starsContainer = document.getElementById('starsInput');
         if (!starsContainer) return;
@@ -176,7 +172,6 @@ class BookManager {
         const ratingInput = document.getElementById('rating');
 
         stars.forEach(star => {
-            //eventos de mouse
             star.addEventListener('mouseover', () => {
                 const rating = parseInt(star.dataset.rating);
                 this.highlightStars(stars, rating, 'hover');
@@ -186,11 +181,9 @@ class BookManager {
                 this.highlightStars(stars, this.selectedRating, 'normal');
             });
 
-            //evento de clique
             star.addEventListener('click', () => {
                 const rating = parseInt(star.dataset.rating);
                 
-                //se clicar na msm estrela, desselecionar
                 if (this.selectedRating === rating) {
                     this.selectedRating = 0;
                 } else {
@@ -207,7 +200,6 @@ class BookManager {
     highlightStars(stars, rating, mode = 'normal') {
         stars.forEach(star => {
             const starRating = parseInt(star.dataset.rating);
-            //resetar classes
             star.classList.remove('fas', 'far', 'active');
             
             if (starRating <= rating) {
@@ -235,9 +227,8 @@ class BookManager {
         });
     }
 
-    //EVENT LISTENERS
+    // EVENT LISTENERS
     setupEventListeners() {
-        //busca de livros
         const searchBtn = document.getElementById('searchBtn');
         const searchInput = document.getElementById('searchInput');
         
@@ -248,7 +239,6 @@ class BookManager {
             });
         }
 
-        //formulário de adicionar livro
         const addBookForm = document.getElementById('addBookForm');
         if (addBookForm) {
             addBookForm.addEventListener('submit', (e) => {
@@ -257,7 +247,6 @@ class BookManager {
             });
         }
 
-        //filtros de leitura
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -267,7 +256,6 @@ class BookManager {
             });
         });
 
-        //filtro de gênero
         const genreFilter = document.getElementById('genreFilter');
         if (genreFilter) {
             genreFilter.addEventListener('change', (e) => {
@@ -276,7 +264,6 @@ class BookManager {
             });
         }
 
-        //ordenação
         const sortBy = document.getElementById('sortBy');
         if (sortBy) {
             sortBy.addEventListener('change', (e) => {
@@ -285,14 +272,11 @@ class BookManager {
             });
         }
 
-        //atalhos
         document.addEventListener('keydown', (e) => {
-            //ctrl + K para focar na busca
             if (e.ctrlKey && e.key === 'k') {
                 e.preventDefault();
                 searchInput?.focus();
             }
-            //ctrl + N para novo livro
             if (e.ctrlKey && e.key === 'n') {
                 e.preventDefault();
                 document.getElementById('title')?.focus();
@@ -300,8 +284,7 @@ class BookManager {
         });
     }
 
-    //operações crud
-    //adicionar livro
+    // OPERAÇÕES CRUD
     async addBook() {
         const title = document.getElementById('title')?.value.trim();
         const author = document.getElementById('author')?.value.trim();
@@ -309,7 +292,6 @@ class BookManager {
         const genre = document.getElementById('genre')?.value;
         const rating = parseInt(document.getElementById('rating')?.value) || 0;
 
-        //validação
         if (!title || !author) {
             this.showToast('⚠️ Título e autor são obrigatórios!', 'error');
             this.shakeElement(document.getElementById('title') || document.getElementById('author'));
@@ -348,21 +330,18 @@ class BookManager {
                 this.books.unshift(book);
                 this.saveBooks();
             }
-            //limpar formulário
+
             this.resetForm();
-            
-            //atualizar UI
             await this.renderBooks();
             this.updateStats();
             this.showToast('✅ Livro adicionado com sucesso!', 'success');
             
-            //scroll para o livro
             setTimeout(() => {
                 const firstBook = document.querySelector('.book-item');
                 if (firstBook) {
                     firstBook.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     firstBook.style.animation = 'none';
-                    firstBook.offsetHeight; // Trigger reflow
+                    firstBook.offsetHeight;
                     firstBook.style.animation = 'scaleIn 0.4s ease';
                 }
             }, 300);
@@ -373,7 +352,6 @@ class BookManager {
         }
     }
 
-    //adicionar livro da API do Google Books
     async addFromAPI(title, author, pages, genre) {
         const book = {
             title: this.unescapeHtml(title),
@@ -397,7 +375,6 @@ class BookManager {
                 const newBook = await response.json();
                 this.books.unshift(newBook);
             } else {
-                //verificar se o livro já existe
                 const exists = this.books.some(b => 
                     b.title.toLowerCase() === book.title.toLowerCase() &&
                     b.author.toLowerCase() === book.author.toLowerCase()
@@ -423,7 +400,7 @@ class BookManager {
         }
     }
 
-    //buscar livros na API do Google
+    // BUSCA NA API DO GOOGLE BOOKS
     async searchBooks() {
         const searchInput = document.getElementById('searchInput');
         const searchTerm = searchInput?.value.trim();
@@ -434,10 +411,19 @@ class BookManager {
             return;
         }
 
+        // CONTROLE DE RATE LIMIT - Evita erro 429
+        const now = Date.now();
+        const timeSinceLastSearch = now - this.lastSearchTime;
+        if (timeSinceLastSearch < 2000) {
+            const waitTime = 2000 - timeSinceLastSearch;
+            this.showToast(`⏳ Aguarde ${Math.ceil(waitTime/1000)}s para buscar novamente...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+        this.lastSearchTime = Date.now();
+
         const resultsDiv = document.getElementById('searchResults');
         if (!resultsDiv) return;
 
-        // Mostrar loading
         resultsDiv.innerHTML = `
             <div class="loading">
                 <div class="spinner"></div>
@@ -445,7 +431,6 @@ class BookManager {
             </div>
         `;
 
-        //scroll para resultados
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         try {
@@ -453,7 +438,15 @@ class BookManager {
                 `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchTerm)}&maxResults=8&langRestrict=pt`
             );
             
-            if (!response.ok) throw new Error('Erro na API');
+            console.log('📡 Status da resposta:', response.status);
+            
+            // Tratar erro 429 especificamente
+            if (response.status === 429) {
+                throw new Error('Muitas requisições! Aguarde 1 minuto antes de tentar novamente.');
+            }
+            
+            if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+            
             const data = await response.json();
 
             if (!data.items || data.items.length === 0) {
@@ -471,7 +464,7 @@ class BookManager {
                 const volumeInfo = book.volumeInfo;
                 const title = volumeInfo.title || 'Título desconhecido';
                 const author = volumeInfo.authors ? volumeInfo.authors.join(', ') : 'Autor desconhecido';
-                const pages = volumeInfo.pageCount || 'N/A';
+                const pages = volumeInfo.pageCount || 0;
                 const genre = volumeInfo.categories ? volumeInfo.categories[0] : 'Outro';
                 const thumbnail = volumeInfo.imageLinks?.thumbnail || '';
                 const description = volumeInfo.description ? 
@@ -480,35 +473,40 @@ class BookManager {
 
                 return `
                     <div class="book-card result-card animate-slide-up" style="animation-delay: ${index * 0.1}s">
-                        ${thumbnail ? `<img src="${thumbnail}" alt="${title}" class="book-thumbnail">` : ''}
+                        ${thumbnail ? `<img src="${thumbnail}" alt="${this.escapeHtml(title)}" class="book-thumbnail">` : ''}
                         <div class="book-info">
-                            <h3 title="${title}">${this.truncateText(title, 50)}</h3>
+                            <h3 title="${this.escapeHtml(title)}">${this.truncateText(title, 50)}</h3>
                             <p class="author-result"><i class="fas fa-user"></i> ${this.truncateText(author, 30)}</p>
                             <p class="pages-result"><i class="fas fa-book"></i> ${pages} páginas</p>
                             <p class="genre-result"><i class="fas fa-tag"></i> ${genre}</p>
                             <p class="description-result" title="${volumeInfo.description || ''}">${description}</p>
                         </div>
-                        <button class="add-btn" onclick="bookManager.addFromAPI('${this.escapeHtml(title)}', '${this.escapeHtml(author)}', ${typeof pages === 'number' ? pages : 0}, '${this.escapeHtml(genre)}')">
+                        <button class="add-btn" onclick="bookManager.addFromAPI('${this.escapeHtml(title)}', '${this.escapeHtml(author)}', ${pages}, '${this.escapeHtml(genre)}')">
                             <i class="fas fa-plus"></i> Adicionar à Biblioteca
                         </button>
                     </div>
                 `;
             }).join('');
 
+            console.log('✅ Livros encontrados e exibidos!');
+
         } catch (error) {
-            console.error('Erro na busca:', error);
+            console.error('❌ Erro na busca:', error);
             resultsDiv.innerHTML = `
                 <div class="error-message animate-fade-in">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>😢 Erro ao buscar livros</p>
-                    <p style="color: var(--text-muted);">Verifique sua conexão e tente novamente</p>
+                    <p style="color: var(--text-muted); font-size: 0.9em;">${error.message}</p>
+                    <p style="color: var(--text-muted); font-size: 0.8em; margin-top: 5px;">
+                        Dica: Aguarde 1 minuto e tente novamente
+                    </p>
                 </div>
             `;
-            this.showToast('Erro de conexão ao buscar livros', 'error');
+            this.showToast('Erro ao buscar livros. Aguarde um momento.', 'error');
         }
     }
 
-    //alternar status de leitura
+    // Demais métodos (toggleRead, editBook, deleteBook, renderBooks, etc.)
     async toggleRead(id) {
         const book = this.books.find(b => b.id === id);
         if (!book) return;
@@ -541,12 +539,10 @@ class BookManager {
         }
     }
 
-    //editar livro
     editBook(id) {
         const book = this.books.find(b => b.id === id);
         if (!book) return;
 
-        //criar modal de edição
         const modal = document.createElement('div');
         modal.className = 'modal active animate-fade-in';
         modal.innerHTML = `
@@ -608,7 +604,6 @@ class BookManager {
 
         document.body.appendChild(modal);
 
-        //configurar estrelas do modal
         const editStars = modal.querySelectorAll('#editStarsInput i');
         let editRating = book.rating;
 
@@ -625,7 +620,6 @@ class BookManager {
             });
         });
 
-        //salvar edição
         modal.querySelector('#saveEdit').addEventListener('click', async () => {
             const newTitle = modal.querySelector('#editTitle').value.trim();
             const newAuthor = modal.querySelector('#editAuthor').value.trim();
@@ -672,31 +666,25 @@ class BookManager {
             }
         });
 
-        //fechar modal ao clicar fora
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.remove();
         });
 
-        //fcar no primeiro input
         setTimeout(() => {
             modal.querySelector('#editTitle')?.focus();
         }, 300);
     }
 
-    //remover livro
     async deleteBook(id) {
         const book = this.books.find(b => b.id === id);
         if (!book) return;
 
-        //encontrar elemento do livro
         const bookElement = document.querySelector(`[data-id="${id}"]`);
         
-        //animação de shake
         if (bookElement) {
             bookElement.style.animation = 'shake 0.5s ease';
         }
 
-        //confirmar após animação
         setTimeout(async () => {
             const confirmed = await this.confirmDialog(
                 '🗑️ Remover Livro',
@@ -729,15 +717,11 @@ class BookManager {
         }, 300);
     }
 
-    //renderização
     async renderBooks() {
         const booksList = document.getElementById('booksList');
         if (!booksList) return;
 
-        //aplicar filtros
         let filteredBooks = this.applyFilters(this.books);
-        
-        //ordenar
         filteredBooks = this.sortBooks(filteredBooks);
 
         if (filteredBooks.length === 0) {
@@ -745,7 +729,6 @@ class BookManager {
             return;
         }
 
-        //renderizar com animação escalonada
         booksList.innerHTML = filteredBooks.map((book, index) => `
             <div class="book-item animate-scale-in" 
                  data-id="${book.id}" 
@@ -840,17 +823,13 @@ class BookManager {
         return starsHtml;
     }
 
-    //filtros e ordenação
     applyFilters(books) {
         let filtered = [...books];
-        //filtro de leitura
         if (this.currentFilter === 'read') {
             filtered = filtered.filter(b => b.read);
         } else if (this.currentFilter === 'unread') {
             filtered = filtered.filter(b => !b.read);
         }
-
-        //filtro de gênero
         if (this.currentGenreFilter && this.currentGenreFilter !== 'all') {
             filtered = filtered.filter(b => b.genre === this.currentGenreFilter);
         }
@@ -874,7 +853,6 @@ class BookManager {
         }
     }
 
-    //estatísticas
     updateStats() {
         const total = this.books.length;
         const read = this.books.filter(b => b.read).length;
@@ -883,7 +861,6 @@ class BookManager {
             ? (ratedBooks.reduce((sum, b) => sum + b.rating, 0) / ratedBooks.length).toFixed(1)
             : '0.0';
 
-        //atualizar badges
         const totalBooksEl = document.getElementById('totalBooks');
         const readBooksEl = document.getElementById('readBooks');
         const avgRatingEl = document.getElementById('avgRating');
@@ -892,7 +869,6 @@ class BookManager {
         if (readBooksEl) readBooksEl.textContent = read;
         if (avgRatingEl) avgRatingEl.textContent = avgRating;
 
-        //animar números
         this.animateNumber(totalBooksEl, total);
         this.animateNumber(readBooksEl, read);
     }
@@ -918,7 +894,6 @@ class BookManager {
         requestAnimationFrame(animate);
     }
 
-    //utilitários
     saveBooks() {
         try {
             localStorage.setItem('booksPro', JSON.stringify(this.books));
@@ -964,7 +939,6 @@ class BookManager {
             'Science': 'Técnico'
         };
 
-        //verificar correspondência parcial
         for (const [key, value] of Object.entries(genreMap)) {
             if (apiGenre.toLowerCase().includes(key.toLowerCase())) {
                 return value;
@@ -1022,17 +996,14 @@ class BookManager {
         }
     }
 
-    //toast notificação
     showToast(message, type = 'info') {
         const toast = document.getElementById('toast');
         if (!toast) return;
 
-        //limpar timeout anterior
         if (this.toastTimeout) {
             clearTimeout(this.toastTimeout);
         }
 
-        //configurar toast
         const icons = {
             success: '✅',
             error: '❌',
@@ -1043,13 +1014,11 @@ class BookManager {
         toast.innerHTML = `${icons[type] || ''} ${message}`;
         toast.className = `toast ${type} show`;
 
-        //auto-hide
         this.toastTimeout = setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
     }
 
-    //diálogo de confirmação
     confirmDialog(title, message, confirmText = 'Confirmar', cancelText = 'Cancelar') {
         return new Promise((resolve) => {
             const modal = document.createElement('div');
@@ -1091,7 +1060,6 @@ class BookManager {
     }
 }
 
-//exportar/importar dados
 class DataManager {
     static exportBooks(bookManager) {
         const data = {
@@ -1158,19 +1126,15 @@ class DataManager {
     }
 }
 
-//inicialização
-//inicializar quando o DOM estiver pronto
+// Inicialização
 document.addEventListener('DOMContentLoaded', () => {
     window.bookManager = new BookManager();
     
-    //adicionar atalhos de teclado para exportar/importar
     document.addEventListener('keydown', (e) => {
-        //ctrl + E para exportar
         if (e.ctrlKey && e.key === 'e') {
             e.preventDefault();
             DataManager.exportBooks(window.bookManager);
         }
-        //ctrl + I para importar
         if (e.ctrlKey && e.key === 'i') {
             e.preventDefault();
             DataManager.importBooks(window.bookManager);
